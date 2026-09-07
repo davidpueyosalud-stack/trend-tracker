@@ -8,6 +8,7 @@ Genera prompts listos para pegar en Claude y obtener ideas + guiones de Reels de
 ## `whatsapp.html` — Envío en cadena por WhatsApp
 Pega una lista de números, escribe el mensaje una sola vez y ve enviando contacto por contacto desde tu WhatsApp normal con el texto ya preparado.
 
+- Importa contactos desde un archivo `.csv` (Google Contacts, Outlook, Excel, exportaciones en español) o `.vcf`/vCard (Contactos de Apple y Android): detecta las columnas de nombre y teléfono, prefiere el móvil sobre el fijo y descarta los contactos sin número.
 - Detecta nombre y teléfono en formatos variados (`María, 600112233`, `612345678 Javier`, `+34 645 00 11 22`).
 - Añade el prefijo del país a los números que no lo lleven y respeta los que ya empiezan por `+` o `00`.
 - Elimina duplicados y avisa de las líneas que no ha podido leer.
