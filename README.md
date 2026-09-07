@@ -12,5 +12,6 @@ Pega una lista de números, escribe el mensaje una sola vez y ve enviando contac
 - Añade el prefijo del país a los números que no lo lleven y respeta los que ya empiezan por `+` o `00`.
 - Elimina duplicados y avisa de las líneas que no ha podido leer.
 - Personaliza con `{nombre}` y `{nombrecompleto}`.
+- El número emisor es simplemente la sesión de WhatsApp abierta en el dispositivo: la página no vincula ninguna cuenta. El campo "tu número" solo sirve de recordatorio y para excluirte de tu propia lista; se guarda en el navegador, no en el repositorio.
 - Abre `wa.me` con el mensaje escrito; el envío final lo confirmas tú (WhatsApp no permite automatizarlo sin arriesgar el bloqueo del número).
 - Guarda el progreso en el navegador, permite saltar/deshacer y exportar el registro en CSV.

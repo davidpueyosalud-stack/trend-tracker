@@ -201,6 +201,12 @@ select{background-image:none;}
       <div class="sec-hint" id="pause-hint"></div>
     </div>
 
+    <div style="margin-bottom:16px;">
+      <label>Tu número (desde el que envías)</label>
+      <input type="text" id="owner-input" placeholder="644968864 — solo se guarda en este navegador">
+      <div id="owner-note" class="notice info hidden" style="margin-top:10px;margin-bottom:0;"><span>📲</span><span id="owner-note-text"></span></div>
+    </div>
+
     <div id="send-empty" class="empty">
       <div class="empty-ico">💬</div>
       <p>Procesa la lista y escribe el mensaje para empezar a enviar.</p>
@@ -244,7 +250,8 @@ function save(){
       msg:document.getElementById('msg-input').value,
       raw:document.getElementById('contacts-input').value,
       prefix:document.getElementById('prefix').value,
-      fallback:document.getElementById('fallback-input').value
+      fallback:document.getElementById('fallback-input').value,
+      owner:document.getElementById('owner-input').value
     }));
   }catch(e){}
 }
@@ -258,6 +265,7 @@ function load(){
   if(d.raw)document.getElementById('contacts-input').value=d.raw;
   if(d.prefix)document.getElementById('prefix').value=d.prefix;
   if(d.fallback)document.getElementById('fallback-input').value=d.fallback;
+  if(d.owner)document.getElementById('owner-input').value=d.owner;
 }
 
 /* ---------- PARSEO ---------- */
@@ -304,7 +312,8 @@ function parseContacts(){
   var raw=document.getElementById('contacts-input').value;
   var def=document.getElementById('prefix').value;
   var lines=raw.split(/\r?\n/);
-  var seen={},fresh=[],dupes=0,bad=[];
+  var own=normalizePhone(document.getElementById('owner-input').value,def);
+  var seen={},fresh=[],dupes=0,bad=[],self=0;
   var prev={};
   for(var k=0;k<contacts.length;k++)prev[contacts[k].phone]=contacts[k].status;
 
@@ -314,6 +323,7 @@ function parseContacts(){
     if(!p){continue;}
     var phone=p.bad?null:normalizePhone(p.phoneRaw,def);
     if(!phone){bad.push(lines[i].trim());continue;}
+    if(own&&phone===own){self++;continue;}
     if(seen[phone]){dupes++;continue;}
     seen[phone]=1;
     fresh.push({name:p.name,phone:phone,status:prev[phone]||'pending'});
@@ -330,6 +340,7 @@ function parseContacts(){
   for(var n=0;n<contacts.length;n++)if(!contacts[n].name)noName++;
   if(noName)chips.appendChild(mkChip(noName+' sin nombre','warnc'));
   if(dupes)chips.appendChild(mkChip(dupes+' duplicado'+(dupes===1?'':'s')+' fuera',''));
+  if(self)chips.appendChild(mkChip('tu propio número fuera','warnc'));
   if(bad.length)chips.appendChild(mkChip(bad.length+' no válido'+(bad.length===1?'':'s'),'bad'));
 
   var ib=document.getElementById('invalid-box');
@@ -439,7 +450,7 @@ function copyMsg(){
   if(!c)return;
   var txt=buildMessage(c);
   var btn=document.getElementById('copy-msg-btn');
-  function ok(){if(btn){btn.textContent='✓ Copiado';setTimeout(function(){if(btn)btn.textContent='⎘ Copiar texto';},2000);}}
+  function ok(){if(btn){btn.textContent='✓ Copiado';setTimeout(function(){if(btn)btn.textContent='⎘ Copiar';},2000);}}
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt).then(ok,function(){fallbackCopy(txt,ok);});
   }else fallbackCopy(txt,ok);
@@ -458,6 +469,15 @@ function render(){
   var ready=contacts.length>0&&hasMsg;
   document.getElementById('send-empty').classList.toggle('hidden',ready);
   document.getElementById('send-area').classList.toggle('hidden',!ready);
+
+  var ownRaw=document.getElementById('owner-input').value;
+  var own=normalizePhone(ownRaw,document.getElementById('prefix').value);
+  var note=document.getElementById('owner-note');
+  if(own){
+    document.getElementById('owner-note-text').textContent='Los mensajes saldrán de la cuenta de WhatsApp abierta en este dispositivo. Comprueba que es la del +'+own+'.';
+    note.classList.remove('hidden');
+  }else note.classList.add('hidden');
+
   if(!ready)return;
 
   var c=counts();
@@ -517,7 +537,7 @@ function render(){
     var cp=document.createElement('button');
     cp.className='btn ghost small';
     cp.id='copy-msg-btn';
-    cp.textContent='⎘ Copiar texto';
+    cp.textContent='⎘ Copiar';
     cp.onclick=copyMsg;
     row.appendChild(cp);
 
@@ -609,6 +629,7 @@ function resetAll(){
 document.getElementById('msg-input').addEventListener('input',onMsgChange);
 document.getElementById('fallback-input').addEventListener('input',function(){render();save();});
 document.getElementById('prefix').addEventListener('change',save);
+document.getElementById('owner-input').addEventListener('input',function(){render();save();});
 document.getElementById('contacts-input').addEventListener('input',save);
 load();
 if(contacts.length)document.getElementById('parsed-hint').textContent=contacts.length+' en lista';
