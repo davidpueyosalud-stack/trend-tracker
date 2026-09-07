@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WhatsApp Sender">
+<title>Envío WhatsApp — fisiodavidpueyo</title>
+<style>
+:root{
+  --green:#00c896;--bg:#0a0a0f;--text:#e8e4dc;--muted:#888;--dim:#444;
+  --card:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.08);
+  --green-dim:rgba(0,200,150,0.12);--green-border:rgba(0,200,150,0.35);
+  --gold:#ffcc44;--red:#ff6b6b;--red-dim:rgba(255,107,107,0.12);--red-border:rgba(255,107,107,0.35);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(0,200,150,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,150,0.04) 1px,transparent 1px);background-size:40px 40px;}
+.bg-glow{position:fixed;top:-150px;right:-150px;z-index:0;pointer-events:none;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(0,200,150,0.09) 0%,transparent 70%);}
+.wrap{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:48px 20px 80px;}
+
+/* HEADER */
+.eyebrow{font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.eyebrow::before{content:'';display:block;width:20px;height:1px;background:var(--green);}
+h1{font-size:clamp(26px,7vw,40px);font-weight:800;line-height:1.05;color:#f0ede6;margin-bottom:10px;}
+h1 span{color:var(--green);}
+.subtitle{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:22px;max-width:420px;}
+
+/* NOTICES */
+.notice{border-radius:12px;padding:12px 15px;font-size:12.5px;color:#999;line-height:1.55;display:flex;gap:10px;align-items:flex-start;margin-bottom:24px;}
+.notice.warn{background:rgba(255,180,0,0.06);border:1px solid rgba(255,180,0,0.18);}
+.notice.warn strong{color:var(--gold);}
+.notice.info{background:rgba(0,200,150,0.05);border:1px solid rgba(0,200,150,0.18);}
+.notice.info strong{color:var(--green);}
+
+/* SECTIONS */
+.section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px;}
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.sec-n{width:22px;height:22px;border-radius:50%;border:1px solid var(--green-border);color:var(--green);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sec-title{font-size:14px;font-weight:700;color:#e8e4dc;}
+.sec-hint{font-size:11.5px;color:#555;margin-left:auto;}
+label{display:block;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#555;margin-bottom:7px;}
+
+textarea,input[type=text],select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s;-webkit-appearance:none;font-family:inherit;}
+textarea{resize:vertical;line-height:1.55;}
+textarea::placeholder,input::placeholder{color:#444;}
+textarea:focus,input:focus,select:focus{border-color:var(--green-border);}
+select{background-image:none;}
+.row{display:flex;gap:10px;}
+.row>*{flex:1;}
+.mt{margin-top:12px;}
+
+.btn{width:100%;padding:14px;border-radius:12px;border:none;font-weight:700;font-size:14.5px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;}
+.btn.primary{background:var(--green);color:#0a0a0f;}
+.btn.primary:active{background:#00dfa8;transform:scale(0.98);}
+.btn.ghost{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);color:#aaa;}
+.btn.ghost:active{transform:scale(0.98);}
+.btn.danger{background:transparent;border:1px solid var(--red-border);color:var(--red);}
+.btn:disabled{opacity:0.35;cursor:default;}
+.btn.small{padding:11px;font-size:13px;}
+
+/* CHIPS */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.chip{padding:6px 11px;border-radius:40px;font-size:12px;border:1px solid rgba(255,255,255,0.1);color:#888;background:transparent;}
+.chip.ok{border-color:var(--green-border);color:var(--green);background:var(--green-dim);}
+.chip.bad{border-color:var(--red-border);color:var(--red);background:var(--red-dim);}
+.chip.warnc{border-color:rgba(255,180,0,0.35);color:var(--gold);background:rgba(255,180,0,0.1);}
+.var-btn{padding:6px 11px;border-radius:40px;font-size:12px;border:1px solid rgba(255,255,255,0.12);color:#999;background:transparent;cursor:pointer;font-family:inherit;}
+.var-btn:active{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+
+/* PROGRESS */
+.prog-wrap{margin-bottom:16px;}
+.prog-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+.prog-count{font-size:22px;font-weight:800;color:#f0ede6;}
+.prog-count small{font-size:13px;font-weight:600;color:#555;}
+.prog-pct{font-size:12px;color:var(--green);font-weight:700;}
+.prog-bar{height:6px;border-radius:6px;background:rgba(255,255,255,0.06);overflow:hidden;}
+.prog-fill{height:100%;background:var(--green);border-radius:6px;transition:width 0.3s;}
+
+/* CURRENT CARD */
+.current{background:#0d0d14;border:1px solid var(--green-border);border-radius:14px;padding:18px;margin-bottom:14px;animation:fadeUp 0.3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.cur-name{font-size:19px;font-weight:800;color:#f0ede6;margin-bottom:3px;word-break:break-word;}
+.cur-phone{font-size:13px;color:var(--green);font-variant-numeric:tabular-nums;margin-bottom:14px;}
+.cur-msg{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:13px;font-size:13px;color:#bbb;line-height:1.65;white-space:pre-wrap;word-break:break-word;max-height:190px;overflow-y:auto;}
+.cur-actions{display:flex;flex-direction:column;gap:9px;margin-top:14px;}
+.mini-row{display:flex;gap:9px;}
+.mini-row>*{flex:1;}
+
+/* LIST */
+.list{margin-top:6px;max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;}
+.item{display:flex;align-items:center;gap:11px;padding:11px 13px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;}
+.item:last-child{border-bottom:none;}
+.item.is-current{background:var(--green-dim);}
+.item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#333;}
+.item-dot.sent{background:var(--green);}
+.item-dot.skipped{background:var(--gold);}
+.item-txt{flex:1;min-width:0;}
+.item-name{font-size:13px;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-phone{font-size:11px;color:#555;font-variant-numeric:tabular-nums;}
+.item-tag{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#444;flex-shrink:0;}
+.item-tag.sent{color:var(--green);}
+.item-tag.skipped{color:var(--gold);}
+
+.done{text-align:center;padding:34px 16px;}
+.done-ico{font-size:38px;margin-bottom:12px;}
+.done h3{font-size:17px;color:#f0ede6;margin-bottom:7px;}
+.done p{font-size:13px;color:#666;line-height:1.6;}
+
+.empty{display:flex;flex-direction:column;align-items:center;padding:44px 20px;gap:12px;text-align:center;}
+.empty-ico{font-size:34px;opacity:0.3;}
+.empty p{font-size:13.5px;color:#444;max-width:280px;line-height:1.6;}
+.foot{margin-top:22px;display:flex;flex-direction:column;gap:9px;}
+.backlink{display:inline-block;margin-top:26px;font-size:12px;color:#555;text-decoration:none;}
+.backlink:active{color:var(--green);}
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="wrap">
+
+  <div class="eyebrow">fisiodavidpueyo · whatsapp</div>
+  <h1>Envío en<br><span>Cadena</span></h1>
+  <p class="subtitle">Pega tu lista de números, escribe el mensaje una vez y ve enviando contacto por contacto desde tu WhatsApp normal, con el texto ya preparado.</p>
+
+  <div class="notice warn">
+    <span>⚠️</span>
+    <span>El envío final lo haces tú (WhatsApp no permite automatizarlo sin riesgo de bloqueo). <strong>Ve por tandas de 20-30</strong>, personaliza con el nombre y escribe solo a gente que ya ha interactuado contigo: los reportes por spam bloquean el número.</span>
+  </div>
+
+  <!-- PASO 1: CONTACTOS -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-n">1</div>
+      <div class="sec-title">Tus contactos</div>
+      <div class="sec-hint" id="parsed-hint"></div>
+    </div>
+
+    <div class="row">
+      <div style="flex:0 0 120px">
+        <label>Prefijo país</label>
+        <select id="prefix">
+          <option value="34">🇪🇸 +34</option>
+          <option value="52">🇲🇽 +52</option>
+          <option value="54">🇦🇷 +54</option>
+          <option value="57">🇨🇴 +57</option>
+          <option value="56">🇨🇱 +56</option>
+          <option value="51">🇵🇪 +51</option>
+          <option value="1">🇺🇸 +1</option>
+          <option value="44">🇬🇧 +44</option>
+          <option value="33">🇫🇷 +33</option>
+          <option value="39">🇮🇹 +39</option>
+          <option value="351">🇵🇹 +351</option>
+        </select>
+      </div>
+      <div>
+        <label>Números sin prefijo</label>
+        <div style="font-size:12px;color:#555;line-height:1.5;padding-top:9px;">Los que ya lleven <strong style="color:#888">+</strong> o <strong style="color:#888">00</strong> se respetan.</div>
+      </div>
+    </div>
+
+    <div class="mt">
+      <label>Lista de números</label>
+      <textarea id="contacts-input" rows="7" placeholder="Un contacto por línea. Acepta cualquiera de estos formatos:&#10;&#10;María, 600 11 22 33&#10;612345678 Javier&#10;+34 645 00 11 22&#10;677889900"></textarea>
+    </div>
+
+    <button class="btn primary mt" onclick="parseContacts()">✦ Procesar lista</button>
+    <div class="chips" id="parse-chips"></div>
+    <div id="invalid-box" class="notice warn hidden" style="margin-top:12px;margin-bottom:0;"><span>🚫</span><span id="invalid-text"></span></div>
+  </div>
+
+  <!-- PASO 2: MENSAJE -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-n">2</div>
+      <div class="sec-title">Tu mensaje</div>
+      <div class="sec-hint" id="char-count"></div>
+    </div>
+
+    <textarea id="msg-input" rows="6" placeholder="Hola {nombre}, ¿qué tal va la espalda estos días?&#10;&#10;Te escribo porque…"></textarea>
+
+    <div class="chips">
+      <button class="var-btn" onclick="insertVar('{nombre}')">+ {nombre}</button>
+      <button class="var-btn" onclick="insertVar('{nombrecompleto}')">+ {nombrecompleto}</button>
+    </div>
+
+    <div class="mt">
+      <label>Si un contacto no tiene nombre, usar</label>
+      <input type="text" id="fallback-input" placeholder="(se deja vacío)">
+    </div>
+  </div>
+
+  <!-- PASO 3: ENVÍO -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-n">3</div>
+      <div class="sec-title">Enviar</div>
+      <div class="sec-hint" id="pause-hint"></div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label>Tu número (desde el que envías)</label>
+      <input type="text" id="owner-input" placeholder="644968864 — solo se guarda en este navegador">
+      <div id="owner-note" class="notice info hidden" style="margin-top:10px;margin-bottom:0;"><span>📲</span><span id="owner-note-text"></span></div>
+    </div>
+
+    <div id="send-empty" class="empty">
+      <div class="empty-ico">💬</div>
+      <p>Procesa la lista y escribe el mensaje para empezar a enviar.</p>
+    </div>
+
+    <div id="send-area" class="hidden">
+      <div class="prog-wrap">
+        <div class="prog-top">
+          <div class="prog-count"><span id="done-n">0</span><small> / <span id="total-n">0</span> gestionados</small></div>
+          <div class="prog-pct" id="prog-pct">0%</div>
+        </div>
+        <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      </div>
+
+      <div id="current-card"></div>
+
+      <div class="list" id="contact-list"></div>
+
+      <div class="foot">
+        <button class="btn ghost small" onclick="exportCsv()">⤓ Descargar registro (CSV)</button>
+        <button class="btn danger small" onclick="resetAll()">Borrar lista y empezar de cero</button>
+      </div>
+    </div>
+  </div>
+
+  <a class="backlink" href="index.html">← Ideas de contenido</a>
+
+</div>
+
+<script>
+var KEY='wa-sender-v1';
+var contacts=[];   // {name, phone, status}
+var idx=0;
+var sentThisRun=0;
+
+/* ---------- PERSISTENCIA ---------- */
+function save(){
+  try{
+    localStorage.setItem(KEY,JSON.stringify({
+      contacts:contacts,idx:idx,
+      msg:document.getElementById('msg-input').value,
+      raw:document.getElementById('contacts-input').value,
+      prefix:document.getElementById('prefix').value,
+      fallback:document.getElementById('fallback-input').value,
+      owner:document.getElementById('owner-input').value
+    }));
+  }catch(e){}
+}
+function load(){
+  var d;
+  try{d=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){}
+  if(!d)return;
+  contacts=d.contacts||[];
+  idx=d.idx||0;
+  if(d.msg)document.getElementById('msg-input').value=d.msg;
+  if(d.raw)document.getElementById('contacts-input').value=d.raw;
+  if(d.prefix)document.getElementById('prefix').value=d.prefix;
+  if(d.fallback)document.getElementById('fallback-input').value=d.fallback;
+  if(d.owner)document.getElementById('owner-input').value=d.owner;
+}
+
+/* ---------- PARSEO ---------- */
+function cleanName(n){
+  return (n||'').replace(/["']/g,'').replace(/^\s*(nombre|name)\s*[:\-]\s*/i,'').replace(/[\-–—:]+\s*$/,'').replace(/\s+/g,' ').trim();
+}
+
+function normalizePhone(raw,def){
+  var s=(raw||'').trim();
+  var intl = s.charAt(0)==='+' || /^00\d/.test(s.replace(/[\s().\-]/g,''));
+  var d=s.replace(/\D/g,'');
+  if(/^00/.test(d)){d=d.replace(/^00/,'');intl=true;}
+  if(!d)return null;
+  if(!intl && d.length<=10 && d.indexOf(def)!==0) d=def+d;
+  if(d.length<8||d.length>15)return null;
+  return d;
+}
+
+function parseLine(line){
+  line=line.trim();
+  if(!line)return null;
+  var name='',phoneRaw='';
+  var parts=line.split(/[,;\t|]/);
+  if(parts.length>1){
+    var best=-1,bestD=-1;
+    for(var i=0;i<parts.length;i++){
+      var dc=parts[i].replace(/\D/g,'').length;
+      if(dc>bestD){bestD=dc;best=i;}
+    }
+    phoneRaw=parts[best];
+    var others=[];
+    for(var j=0;j<parts.length;j++){if(j!==best&&parts[j].trim())others.push(parts[j].trim());}
+    name=others.join(' ');
+  }else{
+    var m=line.match(/(\+?\d[\d\s().\-]{5,})/);
+    if(!m)return{name:'',phoneRaw:line,bad:true};
+    phoneRaw=m[1];
+    name=line.replace(m[1],' ');
+  }
+  return {name:cleanName(name),phoneRaw:phoneRaw};
+}
+
+function parseContacts(){
+  var raw=document.getElementById('contacts-input').value;
+  var def=document.getElementById('prefix').value;
+  var lines=raw.split(/\r?\n/);
+  var own=normalizePhone(document.getElementById('owner-input').value,def);
+  var seen={},fresh=[],dupes=0,bad=[],self=0;
+  var prev={};
+  for(var k=0;k<contacts.length;k++)prev[contacts[k].phone]=contacts[k].status;
+
+  for(var i=0;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    var p=parseLine(lines[i]);
+    if(!p){continue;}
+    var phone=p.bad?null:normalizePhone(p.phoneRaw,def);
+    if(!phone){bad.push(lines[i].trim());continue;}
+    if(own&&phone===own){self++;continue;}
+    if(seen[phone]){dupes++;continue;}
+    seen[phone]=1;
+    fresh.push({name:p.name,phone:phone,status:prev[phone]||'pending'});
+  }
+
+  contacts=fresh;
+  idx=0;
+  for(var z=0;z<contacts.length;z++){if(contacts[z].status==='pending'){idx=z;break;}}
+
+  var chips=document.getElementById('parse-chips');
+  chips.innerHTML='';
+  chips.appendChild(mkChip(contacts.length+' contacto'+(contacts.length===1?'':'s')+' listo'+(contacts.length===1?'':'s'),'ok'));
+  var noName=0;
+  for(var n=0;n<contacts.length;n++)if(!contacts[n].name)noName++;
+  if(noName)chips.appendChild(mkChip(noName+' sin nombre','warnc'));
+  if(dupes)chips.appendChild(mkChip(dupes+' duplicado'+(dupes===1?'':'s')+' fuera',''));
+  if(self)chips.appendChild(mkChip('tu propio número fuera','warnc'));
+  if(bad.length)chips.appendChild(mkChip(bad.length+' no válido'+(bad.length===1?'':'s'),'bad'));
+
+  var ib=document.getElementById('invalid-box');
+  if(bad.length){
+    document.getElementById('invalid-text').textContent='No he podido leer: '+bad.slice(0,6).join(' · ')+(bad.length>6?' y '+(bad.length-6)+' más':'');
+    ib.classList.remove('hidden');
+  }else ib.classList.add('hidden');
+
+  document.getElementById('parsed-hint').textContent=contacts.length?contacts.length+' en lista':'';
+  render();
+  save();
+}
+
+function mkChip(txt,cls){
+  var el=document.createElement('span');
+  el.className='chip'+(cls?' '+cls:'');
+  el.textContent=txt;
+  return el;
+}
+
+/* ---------- MENSAJE ---------- */
+function insertVar(v){
+  var ta=document.getElementById('msg-input');
+  var s=ta.selectionStart||0,e=ta.selectionEnd||0;
+  ta.value=ta.value.slice(0,s)+v+ta.value.slice(e);
+  ta.focus();
+  ta.selectionStart=ta.selectionEnd=s+v.length;
+  onMsgChange();
+}
+
+function buildMessage(c){
+  var tpl=document.getElementById('msg-input').value;
+  var fb=document.getElementById('fallback-input').value.trim();
+  var full=c.name||fb;
+  var first=full?full.split(' ')[0]:'';
+  return tpl
+    .replace(/\{nombrecompleto\}/gi,full)
+    .replace(/\{nombre\}/gi,first)
+    .replace(/[ \t]{2,}/g,' ')
+    .replace(/ +([,.!?])/g,'$1');
+}
+
+function onMsgChange(){
+  var len=document.getElementById('msg-input').value.length;
+  document.getElementById('char-count').textContent=len?len+' caracteres':'';
+  render();
+  save();
+}
+
+/* ---------- ENVÍO ---------- */
+function counts(){
+  var s=0,k=0;
+  for(var i=0;i<contacts.length;i++){
+    if(contacts[i].status==='sent')s++;
+    else if(contacts[i].status==='skipped')k++;
+  }
+  return {sent:s,skipped:k,done:s+k,total:contacts.length};
+}
+
+function nextPending(from){
+  for(var i=from;i<contacts.length;i++)if(contacts[i].status==='pending')return i;
+  for(var j=0;j<from;j++)if(contacts[j].status==='pending')return j;
+  return -1;
+}
+
+function openAndSend(){
+  var c=contacts[idx];
+  if(!c)return;
+  var url='https://wa.me/'+c.phone+'?text='+encodeURIComponent(buildMessage(c));
+  window.open(url,'_blank');
+  c.status='sent';
+  sentThisRun++;
+  advance();
+}
+
+function markSkip(){
+  var c=contacts[idx];
+  if(!c)return;
+  c.status='skipped';
+  advance();
+}
+
+function advance(){
+  var n=nextPending(idx+1);
+  idx=n===-1?idx:n;
+  render();
+  save();
+}
+
+function goTo(i){
+  idx=i;
+  render();
+  save();
+}
+
+function undo(){
+  var c=contacts[idx];
+  if(c&&c.status!=='pending'){c.status='pending';render();save();return;}
+  for(var i=idx-1;i>=0;i--){
+    if(contacts[i].status!=='pending'){contacts[i].status='pending';idx=i;break;}
+  }
+  render();save();
+}
+
+function copyMsg(){
+  var c=contacts[idx];
+  if(!c)return;
+  var txt=buildMessage(c);
+  var btn=document.getElementById('copy-msg-btn');
+  function ok(){if(btn){btn.textContent='✓ Copiado';setTimeout(function(){if(btn)btn.textContent='⎘ Copiar';},2000);}}
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok,function(){fallbackCopy(txt,ok);});
+  }else fallbackCopy(txt,ok);
+}
+function fallbackCopy(txt,cb){
+  var ta=document.createElement('textarea');
+  ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');cb();}catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* ---------- RENDER ---------- */
+function render(){
+  var hasMsg=document.getElementById('msg-input').value.trim().length>0;
+  var ready=contacts.length>0&&hasMsg;
+  document.getElementById('send-empty').classList.toggle('hidden',ready);
+  document.getElementById('send-area').classList.toggle('hidden',!ready);
+
+  var ownRaw=document.getElementById('owner-input').value;
+  var own=normalizePhone(ownRaw,document.getElementById('prefix').value);
+  var note=document.getElementById('owner-note');
+  if(own){
+    document.getElementById('owner-note-text').textContent='Los mensajes saldrán de la cuenta de WhatsApp abierta en este dispositivo. Comprueba que es la del +'+own+'.';
+    note.classList.remove('hidden');
+  }else note.classList.add('hidden');
+
+  if(!ready)return;
+
+  var c=counts();
+  document.getElementById('done-n').textContent=c.done;
+  document.getElementById('total-n').textContent=c.total;
+  var pct=c.total?Math.round(c.done/c.total*100):0;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('prog-fill').style.width=pct+'%';
+
+  document.getElementById('pause-hint').textContent=(sentThisRun>=20)?'☕ Toca descanso':'';
+
+  var card=document.getElementById('current-card');
+  card.innerHTML='';
+
+  if(c.done>=c.total){
+    var d=document.createElement('div');
+    d.className='done';
+    d.innerHTML='<div class="done-ico">✅</div><h3>Lista terminada</h3><p>'+c.sent+' enviados · '+c.skipped+' omitidos</p>';
+    card.appendChild(d);
+  }else{
+    var cur=contacts[idx];
+    if(!cur||cur.status!=='pending'){
+      var np=nextPending(0);
+      if(np!==-1)idx=np;
+      cur=contacts[idx];
+    }
+    var box=document.createElement('div');
+    box.className='current';
+
+    var nm=document.createElement('div');
+    nm.className='cur-name';
+    nm.textContent=cur.name||'(sin nombre)';
+    box.appendChild(nm);
+
+    var ph=document.createElement('div');
+    ph.className='cur-phone';
+    ph.textContent='+'+cur.phone;
+    box.appendChild(ph);
+
+    var msg=document.createElement('div');
+    msg.className='cur-msg';
+    msg.textContent=buildMessage(cur);
+    box.appendChild(msg);
+
+    var acts=document.createElement('div');
+    acts.className='cur-actions';
+
+    var send=document.createElement('button');
+    send.className='btn primary';
+    send.textContent='➤ Abrir WhatsApp y marcar enviado';
+    send.onclick=openAndSend;
+    acts.appendChild(send);
+
+    var row=document.createElement('div');
+    row.className='mini-row';
+
+    var cp=document.createElement('button');
+    cp.className='btn ghost small';
+    cp.id='copy-msg-btn';
+    cp.textContent='⎘ Copiar';
+    cp.onclick=copyMsg;
+    row.appendChild(cp);
+
+    var sk=document.createElement('button');
+    sk.className='btn ghost small';
+    sk.textContent='Saltar →';
+    sk.onclick=markSkip;
+    row.appendChild(sk);
+
+    var un=document.createElement('button');
+    un.className='btn ghost small';
+    un.textContent='↩ Deshacer';
+    un.onclick=undo;
+    row.appendChild(un);
+
+    acts.appendChild(row);
+    box.appendChild(acts);
+    card.appendChild(box);
+
+    if(sentThisRun>0&&sentThisRun%20===0){
+      var pz=document.createElement('div');
+      pz.className='notice warn';
+      pz.style.marginTop='14px';pz.style.marginBottom='0';
+      pz.innerHTML='<span>☕</span><span>Llevas <strong>'+sentThisRun+' seguidos</strong>. Para unos minutos antes de continuar: las ráfagas largas son lo que dispara los bloqueos.</span>';
+      card.appendChild(pz);
+    }
+  }
+
+  var list=document.getElementById('contact-list');
+  list.innerHTML='';
+  for(var i=0;i<contacts.length;i++){
+    (function(i){
+      var ct=contacts[i];
+      var it=document.createElement('div');
+      it.className='item'+(i===idx?' is-current':'');
+      it.onclick=function(){goTo(i);};
+
+      var dot=document.createElement('div');
+      dot.className='item-dot'+(ct.status!=='pending'?' '+ct.status:'');
+      it.appendChild(dot);
+
+      var txt=document.createElement('div');
+      txt.className='item-txt';
+      var nme=document.createElement('div');
+      nme.className='item-name';
+      nme.textContent=ct.name||'(sin nombre)';
+      var pho=document.createElement('div');
+      pho.className='item-phone';
+      pho.textContent='+'+ct.phone;
+      txt.appendChild(nme);txt.appendChild(pho);
+      it.appendChild(txt);
+
+      var tag=document.createElement('div');
+      tag.className='item-tag'+(ct.status!=='pending'?' '+ct.status:'');
+      tag.textContent=ct.status==='sent'?'Enviado':(ct.status==='skipped'?'Omitido':'');
+      it.appendChild(tag);
+
+      list.appendChild(it);
+    })(i);
+  }
+}
+
+/* ---------- EXTRAS ---------- */
+function exportCsv(){
+  var rows=['nombre,telefono,estado'];
+  for(var i=0;i<contacts.length;i++){
+    var c=contacts[i];
+    rows.push('"'+(c.name||'').replace(/"/g,'""')+'","+'+c.phone+'",'+c.status);
+  }
+  var blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='envio-whatsapp-'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+
+function resetAll(){
+  if(!confirm('¿Borrar la lista y el progreso de envío?'))return;
+  contacts=[];idx=0;sentThisRun=0;
+  document.getElementById('contacts-input').value='';
+  document.getElementById('parse-chips').innerHTML='';
+  document.getElementById('parsed-hint').textContent='';
+  document.getElementById('invalid-box').classList.add('hidden');
+  try{localStorage.removeItem(KEY);}catch(e){}
+  render();
+}
+
+/* ---------- INIT ---------- */
+document.getElementById('msg-input').addEventListener('input',onMsgChange);
+document.getElementById('fallback-input').addEventListener('input',function(){render();save();});
+document.getElementById('prefix').addEventListener('change',save);
+document.getElementById('owner-input').addEventListener('input',function(){render();save();});
+document.getElementById('contacts-input').addEventListener('input',save);
+load();
+if(contacts.length)document.getElementById('parsed-hint').textContent=contacts.length+' en lista';
+onMsgChange();
+</script>
+</body>
+</html>
