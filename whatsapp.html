@@ -167,6 +167,8 @@ select{background-image:none;}
       <textarea id="contacts-input" rows="7" placeholder="Un contacto por línea. Acepta cualquiera de estos formatos:&#10;&#10;María, 600 11 22 33&#10;612345678 Javier&#10;+34 645 00 11 22&#10;677889900"></textarea>
     </div>
 
+    <input type="file" id="file-input" accept=".csv,.tsv,.txt,.vcf,.vcard,text/csv,text/vcard" style="display:none" onchange="importFile(this)">
+    <button class="btn ghost small mt" onclick="document.getElementById('file-input').click()">⤒ Importar archivo (.csv o .vcf)</button>
     <button class="btn primary mt" onclick="parseContacts()">✦ Procesar lista</button>
     <div class="chips" id="parse-chips"></div>
     <div id="invalid-box" class="notice warn hidden" style="margin-top:12px;margin-bottom:0;"><span>🚫</span><span id="invalid-text"></span></div>
@@ -359,6 +361,145 @@ function mkChip(txt,cls){
   el.className='chip'+(cls?' '+cls:'');
   el.textContent=txt;
   return el;
+}
+
+/* ---------- IMPORTAR ARCHIVO ---------- */
+function splitCsvLine(line,delim){
+  var out=[],cur='',q=false;
+  for(var i=0;i<line.length;i++){
+    var ch=line.charAt(i);
+    if(q){
+      if(ch==='"'){if(line.charAt(i+1)==='"'){cur+='"';i++;}else q=false;}
+      else cur+=ch;
+    }else{
+      if(ch==='"')q=true;
+      else if(ch===delim){out.push(cur);cur='';}
+      else cur+=ch;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+function digitsOf(t){return (t||'').replace(/\D/g,'').length;}
+
+function parseVcf(txt){
+  var lines=txt.replace(/\r\n/g,'\n').replace(/\n[ \t]/g,'').split('\n');
+  var out=[],cur=null;
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i];
+    if(/^BEGIN:VCARD/i.test(line)){cur={name:'',n:'',tels:[]};continue;}
+    if(/^END:VCARD/i.test(line)){
+      if(cur){
+        var tel=null;
+        for(var t=0;t<cur.tels.length;t++){if(cur.tels[t].pref){tel=cur.tels[t].val;break;}}
+        if(!tel&&cur.tels.length)tel=cur.tels[0].val;
+        if(tel)out.push({name:cur.name||cur.n,phone:tel});
+      }
+      cur=null;continue;
+    }
+    if(!cur)continue;
+    var m=line.match(/^([^:]+):([\s\S]*)$/);
+    if(!m)continue;
+    var prop=m[1].toUpperCase(),val=m[2].replace(/\\,/g,',').replace(/\\;/g,';').trim();
+    var base=prop.split(';')[0];
+    if(base.indexOf('.')>-1)base=base.split('.')[1];
+    if(base==='FN')cur.name=val;
+    else if(base==='N'){
+      var pieces=val.split(';');
+      cur.n=((pieces[1]||'')+' '+(pieces[0]||'')).replace(/\s+/g,' ').trim();
+    }
+    else if(base==='TEL'&&digitsOf(val)>=6)cur.tels.push({pref:/CELL|MOBILE|IPHONE/i.test(prop),val:val});
+  }
+  return out;
+}
+
+function parseCsv(txt){
+  var lines=txt.replace(/\r\n/g,'\n').split('\n');
+  var first='';
+  for(var f=0;f<lines.length;f++){if(lines[f].trim()){first=lines[f];break;}}
+  var delim=',',bestC=-1;
+  [',',';','\t'].forEach(function(d){
+    var c=splitCsvLine(first,d).length;
+    if(c>bestC){bestC=c;delim=d;}
+  });
+  if(bestC<2)return null;
+
+  var rows=[];
+  for(var i=0;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    rows.push(splitCsvLine(lines[i],delim).map(function(x){return x.trim();}));
+  }
+  if(!rows.length)return null;
+
+  var head=rows[0],headerish=true;
+  for(var hh=0;hh<head.length;hh++)if(digitsOf(head[hh])>=6)headerish=false;
+
+  var fullCol=-1,firstCol=-1,lastCol=-1,anyNameCol=-1,phoneCol=-1,phoneScore=-1;
+  if(headerish){
+    for(var h=0;h<head.length;h++){
+      var k=head[h].toLowerCase().trim();
+      var isType=/tipo|type|label|etiqueta/.test(k);
+      if(!isType&&/tel|phone|m[oó]vil|mobile|celular|whatsapp|n[uú]mero|number/.test(k)){
+        var sc=/m[oó]vil|mobile|cell|celular|whatsapp/.test(k)?3:(/value|valor/.test(k)?2:1);
+        if(sc>phoneScore){phoneScore=sc;phoneCol=h;}
+      }
+      if(/^(name|full name|display name|nombre completo|nombre y apellidos|contacto|contact)$/.test(k)){if(fullCol<0)fullCol=h;}
+      else if(/first name|given name|^nombre$|^first$/.test(k)){if(firstCol<0)firstCol=h;}
+      else if(/last name|family name|surname|^apellidos?$/.test(k)){if(lastCol<0)lastCol=h;}
+      else if(/nombre|name/.test(k)&&!/prefix|suffix|phonetic|nick|file as|user|usuario|archivo/.test(k)){if(anyNameCol<0)anyNameCol=h;}
+    }
+  }
+
+  function cell(row,i){return (i>-1&&row[i])?row[i]:'';}
+
+  var out=[];
+  for(var r=headerish?1:0;r<rows.length;r++){
+    var row=rows[r],phone=cell(row,phoneCol),name='';
+    if(digitsOf(phone)<6){
+      var bi=-1,bd=-1;
+      for(var c=0;c<row.length;c++){var d2=digitsOf(row[c]);if(d2>bd){bd=d2;bi=c;}}
+      if(bd<6)continue;
+      phone=row[bi];
+      if(!headerish){
+        var rest=[];
+        for(var c2=0;c2<row.length;c2++)if(c2!==bi&&row[c2]&&digitsOf(row[c2])===0)rest.push(row[c2]);
+        name=rest.slice(0,2).join(' ');
+      }
+    }
+    if(!name){
+      if(fullCol>-1&&cell(row,fullCol))name=cell(row,fullCol);
+      else if(firstCol>-1||lastCol>-1)name=(cell(row,firstCol)+' '+cell(row,lastCol)).trim();
+      else if(anyNameCol>-1)name=cell(row,anyNameCol);
+    }
+    if(digitsOf(phone)>=6)out.push({name:cleanName(name),phone:phone});
+  }
+  return out;
+}
+
+function importFile(input){
+  var file=input.files&&input.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    var txt=String(reader.result||'');
+    var found=/BEGIN:VCARD/i.test(txt)?parseVcf(txt):parseCsv(txt);
+    var hint=document.getElementById('parsed-hint');
+    if(!found||!found.length){
+      hint.textContent='';
+      alert('No he encontrado teléfonos en "'+file.name+'". Exporta los contactos como CSV o como archivo .vcf y prueba otra vez.');
+      input.value='';
+      return;
+    }
+    var lines=found.map(function(c){
+      return (c.name?c.name+', ':'')+c.phone.replace(/\s+/g,' ').trim();
+    });
+    var ta=document.getElementById('contacts-input');
+    ta.value=(ta.value.trim()?ta.value.replace(/\s*$/,'')+'\n':'')+lines.join('\n');
+    input.value='';
+    parseContacts();
+  };
+  reader.readAsText(file);
 }
 
 /* ---------- MENSAJE ---------- */
