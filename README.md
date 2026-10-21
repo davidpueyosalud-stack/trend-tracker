@@ -5,6 +5,13 @@ Herramientas web de una sola página para @fisiodavidpueyo. Sin dependencias ni 
 ## `index.html` — Ideas de contenido
 Genera prompts listos para pegar en Claude y obtener ideas + guiones de Reels de Instagram y vídeos de YouTube.
 
+## `respuestas.html` — Respuestas al vuelo
+Guion de ventas por WhatsApp listo para copiar: mensaje de apertura para leads recién registrados, respuestas según lo que conteste el lead, cualificación y cierre.
+
+- Escribes el nombre del lead una vez y aparece ya sustituido en todas las respuestas.
+- Botón de copiar en cada mensaje, buscador para encontrar la respuesta en caliente.
+- El enlace del taller se guarda en el navegador y se inserta solo donde hace falta.
+
 ## `whatsapp.html` — Envío en cadena por WhatsApp
 Pega una lista de números, escribe el mensaje una sola vez y ve enviando contacto por contacto desde tu WhatsApp normal con el texto ya preparado.
 
