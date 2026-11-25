@@ -23,7 +23,7 @@ const ROWS: Row[] = [
     evitar: "Cargar peso, estar sentado mucho rato",
     startSec: 8.4,
     endSec: 23.67,
-    bg: "#FFE1D6",
+    bg: "#C8DDF8",
   },
   {
     fase: "Fase 2 · Recuperar movimiento",
@@ -32,7 +32,7 @@ const ROWS: Row[] = [
     evitar: "Flexión profunda con carga",
     startSec: 24.71,
     endSec: 32.79,
-    bg: "#FFF1C2",
+    bg: "#C9F5D2",
   },
   {
     fase: "Fase 3 · Recuperar fuerza",
@@ -41,7 +41,7 @@ const ROWS: Row[] = [
     evitar: "Saltos o impacto brusco",
     startSec: 34.44,
     endSec: 44.92,
-    bg: "#D9F2E3",
+    bg: "#F4D3B0",
   },
   {
     fase: "Fase 4 · Vida normal",
@@ -50,7 +50,7 @@ const ROWS: Row[] = [
     evitar: "—",
     startSec: 46.13,
     endSec: 53.15,
-    bg: "#D9EAF7",
+    bg: "#FBD1D3",
   },
 ];
 
@@ -67,6 +67,8 @@ const ACCENT = "#E8724A";
 const INK = "#16202E";
 const GOOD = "#3FAE6B";
 const BAD = "#E2574C";
+const PAGE_BG = "#FAF7EE";
+const DARK_BG = "#28292D";
 
 // ---- Absolute layout coordinates (content space, before camera transform) ----
 const CARD = {left: 50, top: 70, width: W - 100, height: 1620};
@@ -83,37 +85,44 @@ const ROW_GAP = 20;
 const rowTop = (i: number) => CONTENT_TOP + TITLE_H + 20 + HEADER_H + i * (ROW_H + ROW_GAP);
 const rowCenterY = (i: number) => rowTop(i) + ROW_H / 2;
 const BIO_TOP = rowTop(ROWS.length) + 20;
-
 const CONTENT_CENTER_X = (CONTENT_LEFT + CONTENT_RIGHT) / 2;
+
+// column centers within a row, used as left/right camera focus points
+const LEFT_FOCUS_X = CONTENT_LEFT + 195;
+const RIGHT_FOCUS_X = CONTENT_LEFT + 773;
+const TABLE_WIDE_FY = (rowCenterY(0) + rowCenterY(ROWS.length - 1)) / 2;
 
 // ---- Camera keyframes ----
 type CamKey = {t: number; scale: number; fx: number; fy: number};
 
-const OVERVIEW = {fx: W / 2, fy: 760, scale: 0.86};
-const ZOOM_SCALE = 1.55;
+const INTRO = {scale: 0.95, fx: CONTENT_CENTER_X, fy: CONTENT_TOP + 260};
+const OVERVIEW = {scale: 0.95, fx: CONTENT_CENTER_X, fy: CONTENT_TOP + 320};
+const TABLE_WIDE = {scale: 1.22, fx: CONTENT_CENTER_X, fy: TABLE_WIDE_FY};
+const ZOOM = 1.95;
 
-const rowFocus = (i: number) => ({fx: CONTENT_CENTER_X, fy: rowCenterY(i)});
+function buildCamKeys(): CamKey[] {
+  const keys: CamKey[] = [];
+  keys.push({t: 0, ...INTRO});
+  keys.push({t: ROWS[0].startSec - 1.3, ...INTRO});
+  keys.push({t: ROWS[0].startSec - 0.3, ...TABLE_WIDE});
 
-const CAM_KEYS: CamKey[] = [
-  {t: 0, ...OVERVIEW},
-  {t: ROWS[0].startSec - 0.5, ...OVERVIEW},
-  {t: ROWS[0].startSec, scale: ZOOM_SCALE, ...rowFocus(0)},
-  {t: ROWS[0].endSec, scale: ZOOM_SCALE, ...rowFocus(0)},
-  {t: ROWS[0].endSec + 0.35, ...OVERVIEW},
-  {t: ROWS[1].startSec - 0.3, ...OVERVIEW},
-  {t: ROWS[1].startSec, scale: ZOOM_SCALE, ...rowFocus(1)},
-  {t: ROWS[1].endSec, scale: ZOOM_SCALE, ...rowFocus(1)},
-  {t: ROWS[1].endSec + 0.3, ...OVERVIEW},
-  {t: ROWS[2].startSec - 0.3, ...OVERVIEW},
-  {t: ROWS[2].startSec, scale: ZOOM_SCALE, ...rowFocus(2)},
-  {t: ROWS[2].endSec, scale: ZOOM_SCALE, ...rowFocus(2)},
-  {t: ROWS[2].endSec + 0.3, ...OVERVIEW},
-  {t: ROWS[3].startSec - 0.3, ...OVERVIEW},
-  {t: ROWS[3].startSec, scale: ZOOM_SCALE, ...rowFocus(3)},
-  {t: ROWS[3].endSec, scale: ZOOM_SCALE, ...rowFocus(3)},
-  {t: ROWS[3].endSec + 0.6, ...OVERVIEW},
-  {t: 60.33, ...OVERVIEW},
-];
+  ROWS.forEach((row, i) => {
+    const dur = row.endSec - row.startSec;
+    const leftT = row.startSec;
+    const rightT = row.startSec + dur * 0.45;
+    const wideT = row.startSec + dur * 0.8;
+    keys.push({t: leftT, scale: ZOOM, fx: LEFT_FOCUS_X, fy: rowCenterY(i)});
+    keys.push({t: rightT, scale: ZOOM, fx: RIGHT_FOCUS_X, fy: rowCenterY(i)});
+    keys.push({t: wideT, ...TABLE_WIDE});
+    keys.push({t: row.endSec, ...TABLE_WIDE});
+  });
+
+  keys.push({t: ROWS[ROWS.length - 1].endSec + 1.15, ...OVERVIEW});
+  keys.push({t: 60.33, ...OVERVIEW});
+  return keys;
+}
+
+const CAM_KEYS = buildCamKeys();
 
 const easeInOut = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
 
@@ -143,42 +152,53 @@ const activeRowIndex = (t: number) => {
   return -1;
 };
 
-// A real-looking illustrated hand gripping a pen, drawn in content space.
-const Hand: React.FC<{x: number; y: number}> = ({x, y}) => (
-  <svg
-    width="260"
-    height="260"
-    viewBox="0 0 260 260"
-    style={{position: "absolute", left: x, top: y, filter: "drop-shadow(0 8px 14px rgba(0,0,0,0.18))"}}
-  >
-    {/* pen, running diagonally behind the fingers */}
-    <line x1="240" y1="14" x2="70" y2="190" stroke="#2B2420" strokeWidth="7" strokeLinecap="round" />
-    <line x1="232" y1="22" x2="150" y2="105" stroke="#F0C14B" strokeWidth="18" strokeLinecap="round" />
-    <circle cx="246" cy="8" r="9" fill="#E2574C" />
+// Hand + forearm entering from the bottom-right corner, pen tip anchored at (TIP_X, TIP_Y).
+const TIP_X = 64;
+const TIP_Y = 78;
 
-    {/* palm */}
+const Hand: React.FC<{tipX: number; tipY: number}> = ({tipX, tipY}) => (
+  <svg
+    width="420"
+    height="520"
+    viewBox="0 0 420 520"
+    style={{
+      position: "absolute",
+      left: tipX - TIP_X,
+      top: tipY - TIP_Y,
+      filter: "drop-shadow(0 10px 18px rgba(0,0,0,0.35))",
+    }}
+  >
+    {/* forearm, entering from bottom-right */}
     <path
-      d="M55 150 Q40 120 68 108 Q72 92 96 96 Q100 80 124 86 Q130 74 152 82 Q172 86 168 112 Q178 130 160 148 Q156 172 126 176 Q96 184 72 172 Q50 168 55 150 Z"
+      d="M230 190 Q260 160 300 185 L420 400 Q440 440 410 470 L380 520 L250 420 Q210 390 215 340 Q200 280 215 230 Q215 205 230 190 Z"
+      fill="#E8B894"
+    />
+    <path d="M260 230 Q320 300 360 400" stroke="#D49F72" strokeWidth="4" fill="none" opacity="0.5" />
+
+    {/* pen, running from the tip up through the grip and out past the hand */}
+    <line x1={TIP_X} y1={TIP_Y} x2="300" y2="255" stroke="#2B2420" strokeWidth="6" strokeLinecap="round" />
+    <line x1={TIP_X + 18} y1={TIP_Y + 14} x2="270" y2="235" stroke="#F2C94C" strokeWidth="19" strokeLinecap="round" />
+    <polygon points={`${TIP_X},${TIP_Y} ${TIP_X + 22},${TIP_Y + 6} ${TIP_X + 10},${TIP_Y + 24}`} fill="#2B2420" />
+
+    {/* fist gripping the pen */}
+    <path
+      d="M150 210 Q134 182 160 170 Q165 154 188 160 Q192 144 215 152 Q222 138 244 148 Q264 154 258 178 Q268 196 250 212 Q246 234 218 238 Q190 246 168 234 Q148 230 150 210 Z"
       fill="#E8B894"
       stroke="#C98F66"
       strokeWidth="3"
     />
+    <path d="M178 164 Q181 186 176 206" stroke="#C98F66" strokeWidth="3" fill="none" strokeLinecap="round" />
+    <path d="M200 156 Q203 180 198 200" stroke="#C98F66" strokeWidth="3" fill="none" strokeLinecap="round" />
+    <path d="M222 152 Q225 174 220 196" stroke="#C98F66" strokeWidth="3" fill="none" strokeLinecap="round" />
+    <path d="M243 160 Q246 180 241 200" stroke="#C98F66" strokeWidth="3" fill="none" strokeLinecap="round" />
+    <ellipse cx="166" cy="172" rx="9" ry="6" fill="#F2C9A4" opacity="0.7" />
+    <ellipse cx="188" cy="162" rx="9" ry="6" fill="#F2C9A4" opacity="0.7" />
+    <ellipse cx="210" cy="156" rx="9" ry="6" fill="#F2C9A4" opacity="0.7" />
+    <ellipse cx="230" cy="162" rx="9" ry="6" fill="#F2C9A4" opacity="0.7" />
 
-    {/* finger separation creases */}
-    <path d="M80 100 Q83 122 78 142" stroke="#C98F66" strokeWidth="3" fill="none" strokeLinecap="round" />
-    <path d="M104 90 Q107 115 102 136" stroke="#C98F66" strokeWidth="3" fill="none" strokeLinecap="round" />
-    <path d="M128 84 Q131 108 126 130" stroke="#C98F66" strokeWidth="3" fill="none" strokeLinecap="round" />
-    <path d="M151 90 Q154 112 149 132" stroke="#C98F66" strokeWidth="3" fill="none" strokeLinecap="round" />
-
-    {/* knuckle highlights */}
-    <ellipse cx="90" cy="104" rx="10" ry="7" fill="#F2C9A4" opacity="0.7" />
-    <ellipse cx="114" cy="95" rx="10" ry="7" fill="#F2C9A4" opacity="0.7" />
-    <ellipse cx="138" cy="90" rx="10" ry="7" fill="#F2C9A4" opacity="0.7" />
-    <ellipse cx="159" cy="97" rx="10" ry="7" fill="#F2C9A4" opacity="0.7" />
-
-    {/* thumb, wrapping from the near side */}
+    {/* thumb */}
     <path
-      d="M58 152 Q32 146 34 122 Q36 104 56 110 Q70 114 67 134 Q67 148 58 152 Z"
+      d="M152 214 Q122 212 120 186 Q120 166 144 170 Q160 174 158 196 Q160 212 152 214 Z"
       fill="#E8B894"
       stroke="#C98F66"
       strokeWidth="3"
@@ -212,13 +232,24 @@ export const FasesReel: React.FC = () => {
 
   const activeCaption = CAPTIONS.find((c) => t >= c.startSec && t <= c.endSec);
 
-  const handTargetIdx = idx >= 0 ? idx : t > ROWS[ROWS.length - 1].endSec ? ROWS.length - 1 : 0;
-  const handX = CONTENT_RIGHT - 300;
-  const handY = rowCenterY(handTargetIdx) - 110;
-  const handVisible = t >= ROWS[0].startSec - 0.15;
+  // Hand tip follows the same left->right sweep the camera does within the active row.
+  let tipX = LEFT_FOCUS_X;
+  let tipY = CONTENT_TOP + 200;
+  const handVisible = t >= ROWS[0].startSec - 0.2;
+  if (idx >= 0) {
+    const row = ROWS[idx];
+    const dur = row.endSec - row.startSec;
+    const p = Math.min(1, Math.max(0, (t - row.startSec) / (dur * 0.45)));
+    const ep = easeInOut(p);
+    tipX = LEFT_FOCUS_X + (RIGHT_FOCUS_X - LEFT_FOCUS_X) * ep;
+    tipY = rowCenterY(idx) + 10;
+  } else if (t > ROWS[ROWS.length - 1].endSec) {
+    tipX = RIGHT_FOCUS_X;
+    tipY = rowCenterY(ROWS.length - 1) + 10;
+  }
 
   return (
-    <AbsoluteFill style={{background: "#EDEAE2", fontFamily: "'Work Sans', sans-serif", overflow: "hidden"}}>
+    <AbsoluteFill style={{background: DARK_BG, fontFamily: "'Work Sans', sans-serif", overflow: "hidden"}}>
       <Audio src={staticFile("assets/reel1-fases/audio.m4a")} />
 
       <div
@@ -232,7 +263,7 @@ export const FasesReel: React.FC = () => {
           transformOrigin: "0 0",
         }}
       >
-        {/* Card background */}
+        {/* Page */}
         <div
           style={{
             position: "absolute",
@@ -240,9 +271,9 @@ export const FasesReel: React.FC = () => {
             top: CARD.top,
             width: CARD.width,
             height: CARD.height,
-            background: "#FFFFFF",
-            borderRadius: 28,
-            boxShadow: "0 20px 60px rgba(0,0,0,0.12)",
+            background: PAGE_BG,
+            borderRadius: 20,
+            boxShadow: "0 30px 80px rgba(0,0,0,0.45)",
           }}
         />
 
@@ -259,8 +290,8 @@ export const FasesReel: React.FC = () => {
         >
           <div
             style={{
-              background: "#FBD98A",
-              borderRadius: 16,
+              background: "#FAF168",
+              borderRadius: 10,
               padding: "20px 28px",
               fontFamily: "'Anton', sans-serif",
               fontSize: 40,
@@ -314,7 +345,7 @@ export const FasesReel: React.FC = () => {
               gap: 10,
               alignItems: "center",
               background: row.bg,
-              borderRadius: 18,
+              borderRadius: 14,
               padding: "0 20px",
               boxSizing: "border-box",
               border: i === idx ? `4px solid ${ACCENT}` : "4px solid transparent",
@@ -332,8 +363,6 @@ export const FasesReel: React.FC = () => {
             </div>
           </div>
         ))}
-
-        {handVisible && <Hand x={handX} y={handY} />}
 
         {/* Bio */}
         <div
@@ -367,6 +396,8 @@ export const FasesReel: React.FC = () => {
             <div style={{fontSize: 16, color: "#6B6B6B"}}>Hernias L4-L5 y L5-S1 · @fisiodavidpueyo</div>
           </div>
         </div>
+
+        {handVisible && <Hand tipX={tipX} tipY={tipY} />}
       </div>
 
       {/* Caption burst (screen space, not affected by camera) */}
