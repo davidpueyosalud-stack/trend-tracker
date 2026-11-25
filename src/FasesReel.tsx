@@ -54,14 +54,84 @@ const ROWS: Row[] = [
   },
 ];
 
-const CAPTIONS: {text: string; startSec: number; endSec: number}[] = [
-  {text: "4 FASES", startSec: 8.4, endSec: 11.5},
-  {text: "SEMANA 0-2", startSec: 14.2, endSec: 20.1},
-  {text: "SEMANA 2-6", startSec: 25.4, endSec: 31.2},
-  {text: "SEMANA 6-12", startSec: 36.3, endSec: 43},
-  {text: "SEMANA 12+", startSec: 46.8, endSec: 52.5},
-  {text: "GUÁRDATE ESTA", startSec: 54.3, endSec: 57.6},
+// Continuous subtitles: one block of speech per detected pause-segment, split into
+// short readable chunks and timed proportionally to each chunk's length.
+const SUBTITLE_SEGMENTS: {startSec: number; endSec: number; chunks: string[]}[] = [
+  {
+    startSec: 8.4,
+    endSec: 23.67,
+    chunks: [
+      "Estas son las 4 fases",
+      "para recuperarte de",
+      "una hernia discal,",
+      "semana a semana.",
+      "Fase 1, calmar:",
+      "las dos primeras semanas,",
+      "caminar corto y",
+      "movilidad suave —",
+      "nada de cargar peso",
+      "ni estar mucho",
+      "tiempo sentado.",
+    ],
+  },
+  {
+    startSec: 24.71,
+    endSec: 32.79,
+    chunks: [
+      "Fase 2, recuperar",
+      "movimiento: de la",
+      "semana 2 a la 6,",
+      "bisagra de cadera",
+      "sin carga y",
+      "core suave.",
+    ],
+  },
+  {
+    startSec: 34.44,
+    endSec: 44.92,
+    chunks: [
+      "Fase 3, recuperar",
+      "fuerza: semana 6",
+      "a 12, peso",
+      "progresivo y sentadilla",
+      "controlada — ahí",
+      "evitas saltos o",
+      "impactos bruscos.",
+    ],
+  },
+  {
+    startSec: 46.13,
+    endSec: 53.15,
+    chunks: [
+      "Y la fase 4,",
+      "volver a tu vida:",
+      "a partir de",
+      "la semana 12,",
+      "coger a tus hijos,",
+      "hacer deporte, viajar.",
+    ],
+  },
+  {
+    startSec: 54.3,
+    endSec: 57.61,
+    chunks: ["Guárdate esta tabla", "para saber en qué", "fase estás tú."],
+  },
 ];
+
+type Caption = {text: string; startSec: number; endSec: number};
+
+const CAPTIONS: Caption[] = SUBTITLE_SEGMENTS.flatMap((seg) => {
+  const totalChars = seg.chunks.reduce((s, c) => s + c.length, 0);
+  const dur = seg.endSec - seg.startSec;
+  let cursor = seg.startSec;
+  return seg.chunks.map((text) => {
+    const share = (text.length / totalChars) * dur;
+    const startSec = cursor;
+    const endSec = cursor + share;
+    cursor = endSec;
+    return {text, startSec, endSec};
+  });
+});
 
 const ACCENT = "#E8724A";
 const INK = "#16202E";
@@ -400,13 +470,13 @@ export const FasesReel: React.FC = () => {
         {handVisible && <Hand tipX={tipX} tipY={tipY} />}
       </div>
 
-      {/* Caption burst (screen space, not affected by camera) */}
+      {/* Continuous subtitles (screen space, not affected by camera) */}
       {activeCaption && (
         <div
           style={{
             position: "absolute",
-            left: 0,
-            right: 0,
+            left: 40,
+            right: 40,
             bottom: 90,
             display: "flex",
             justifyContent: "center",
@@ -417,10 +487,13 @@ export const FasesReel: React.FC = () => {
               background: INK,
               color: "#FFFFFF",
               fontFamily: "'Anton', sans-serif",
-              fontSize: 56,
-              padding: "16px 40px",
-              borderRadius: 16,
+              fontSize: 38,
+              padding: "14px 32px",
+              borderRadius: 14,
               textTransform: "uppercase",
+              textAlign: "center",
+              lineHeight: 1.15,
+              maxWidth: "100%",
             }}
           >
             {activeCaption.text}
