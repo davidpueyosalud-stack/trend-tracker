@@ -224,11 +224,30 @@ export const FasesReel: React.FC = () => {
         {/* Bio */}
         <div style={{display: "flex", alignItems: "center", gap: 20, marginTop: 24}}>
           <svg width="70" height="70" viewBox="0 0 100 100">
-            <circle cx="50" cy="38" r="22" fill="#D9A574" />
-            <path d="M30 30 Q50 10 70 30 Q72 20 50 16 Q28 20 30 30 Z" fill="#2B2420" />
-            <path d="M34 44 Q50 54 66 44 L66 50 Q50 58 34 50 Z" fill="#3A2A20" />
-            <path d="M20 95 Q25 60 50 60 Q75 60 80 95 Z" fill={INK} />
-            <rect x="44" y="58" width="12" height="14" fill="#D9A574" />
+            {/* neck */}
+            <rect x="42" y="54" width="16" height="16" fill="#D9A574" />
+            {/* scrub top, teal v-neck */}
+            <path d="M18 98 Q22 62 50 62 Q78 62 82 98 Z" fill="#2D5F6B" />
+            <path d="M50 62 L40 70 L50 80 L60 70 Z" fill="#234B54" />
+            {/* face */}
+            <circle cx="50" cy="36" r="21" fill="#D9A574" />
+            {/* ears */}
+            <circle cx="29" cy="37" r="4" fill="#D9A574" />
+            <circle cx="71" cy="37" r="4" fill="#D9A574" />
+            {/* messy dark hair */}
+            <path
+              d="M27 32 Q24 12 50 10 Q76 12 73 32 Q73 24 66 23 Q68 17 60 16 Q58 22 52 17 Q50 23 45 17 Q42 22 38 18 Q36 23 32 22 Q27 24 27 32 Z"
+              fill="#241F1C"
+            />
+            {/* eyebrows */}
+            <path d="M36 32 Q41 29 46 31" stroke="#241F1C" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+            <path d="M54 31 Q59 29 64 32" stroke="#241F1C" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+            {/* goatee + mustache, salt-and-pepper */}
+            <path
+              d="M38 40 Q40 50 46 54 Q50 57 54 54 Q60 50 62 40 Q58 46 50 47 Q42 46 38 40 Z"
+              fill="#5C5048"
+            />
+            <path d="M40 44 Q50 49 60 44 Q58 41 50 42 Q42 41 40 44 Z" fill="#4A4038" />
           </svg>
           <div>
             <div style={{fontWeight: 700, fontSize: 20, color: INK}}>David · Fisioterapeuta y osteópata</div>
