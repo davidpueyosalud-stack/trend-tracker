@@ -1,6 +1,7 @@
 import React from "react";
 import { Composition, staticFile } from "remotion";
 import { AutoEditedReel, Segment } from "./AutoEditedReel";
+import { FasesReel, FASES_REEL_DURATION_IN_FRAMES, FASES_REEL_FPS } from "./FasesReel";
 
 type SegmentsFile = {
   fps: number;
@@ -10,6 +11,15 @@ type SegmentsFile = {
 
 export const RemotionRoot: React.FC = () => {
   return (
+    <>
+    <Composition
+      id="FasesReel"
+      component={FasesReel}
+      durationInFrames={FASES_REEL_DURATION_IN_FRAMES}
+      fps={FASES_REEL_FPS}
+      width={1080}
+      height={1920}
+    />
     <Composition
       id="AutoEditedReel"
       component={AutoEditedReel}
@@ -35,5 +45,6 @@ export const RemotionRoot: React.FC = () => {
         };
       }}
     />
+    </>
   );
 };
